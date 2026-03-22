@@ -9,27 +9,28 @@ import { dirname, join } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
 
-// Middleware
+// Log all requests for debugging
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.url}`);
+  console.log('Headers:', req.headers);
+  next();
+});
+
+// CORS middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:8080', 'https://your-frontend.com', '*'],
+  origin: '*', // Allow all for testing
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Request logging
-app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
-});
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI;
@@ -58,8 +59,14 @@ import notificationRoutes from './routes/notification.routes.js';
 import transferRoutes from './routes/transfer.routes.js';
 import exchangeRateRoutes from './routes/exchangeRate.routes.js';
 
-// Routes
-app.use('/api/auth', authRoutes);
+console.log('✅ Routes imported');
+
+// Routes - with error handling wrapper
+app.use('/api/auth', (req, res, next) => {
+  console.log('📌 Auth route accessed');
+  next();
+}, authRoutes);
+
 app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/beneficiaries', beneficiaryRoutes);
@@ -68,8 +75,11 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/transfer', transferRoutes);
 app.use('/api/exchange-rates', exchangeRateRoutes);
 
+console.log('✅ Routes mounted');
+
 // Health check
 app.get('/api/health', (req, res) => {
+  console.log('🏥 Health check hit');
   res.json({
     status: 'OK',
     timestamp: new Date(),
@@ -88,38 +98,43 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/api/health',
       auth: '/api/auth',
-      accounts: '/api/accounts',
-      transactions: '/api/transactions',
-      beneficiaries: '/api/beneficiaries',
-      cards: '/api/cards',
-      notifications: '/api/notifications',
-      transfer: '/api/transfer',
-      exchangeRates: '/api/exchange-rates'
+      'auth-test': '/api/auth/test'
     }
   });
 });
 
-// Error handling middleware
+// Error handling middleware - FIXED
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
+  console.error('❌ Error caught in middleware:', err);
+  console.error('Error stack:', err.stack);
+  
+  // Send proper error response
   res.status(err.status || 500).json({
     message: err.message || 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.stack : 'Internal server error'
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
-// 404 handler
+// 404 handler - Must be last
 app.use((req, res) => {
+  console.log(`❌ 404 - Route not found: ${req.method} ${req.url}`);
   res.status(404).json({ 
     message: `Route ${req.method} ${req.url} not found`,
-    documentation: 'Visit / for available endpoints'
+    availableRoutes: [
+      'GET /',
+      'GET /api/health',
+      'GET /api/auth/test',
+      'POST /api/auth/register',
+      'POST /api/auth/login'
+    ]
   });
 });
 
-// Use PORT from environment or default to 5000
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`📝 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🧪 Auth test: http://localhost:${PORT}/api/auth/test`);
 });

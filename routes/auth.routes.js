@@ -8,26 +8,39 @@ import BankAccount from '../models/BankAccount.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Register
+// Add a test route to verify router is working
+router.get('/test', (req, res) => {
+  console.log('✅ Auth test route hit');
+  res.json({ message: 'Auth router is working' });
+});
+
+// Register - With detailed logging
 router.post('/register', [
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
   body('phone').notEmpty().withMessage('Phone number is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
 ], async (req, res, next) => {
+  console.log('📝 Register route hit');
+  console.log('Request body:', req.body);
+  
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { name, email, phone, password } = req.body;
 
+    // Check if user exists
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
     if (existingUser) {
+      console.log('User already exists');
       return res.status(400).json({ message: 'User already exists with this email or phone' });
     }
 
+    // Create user
     const user = new User({
       userId: `USR${Date.now()}`,
       name,
@@ -37,7 +50,9 @@ router.post('/register', [
     });
 
     await user.save();
+    console.log('User created:', user._id);
 
+    // Create default bank account
     const account = new BankAccount({
       userId: user._id,
       accountNumber: `ACC${Date.now()}${Math.floor(Math.random() * 1000)}`,
@@ -51,7 +66,9 @@ router.post('/register', [
     });
 
     await account.save();
+    console.log('Account created:', account.accountNumber);
 
+    // Generate token
     const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
@@ -70,16 +87,19 @@ router.post('/register', [
       }
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error('Registration error details:', error);
+    console.error('Error stack:', error.stack);
     next(error);
   }
 });
 
-// Login
+// Login - With detailed logging
 router.post('/login', [
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required')
 ], async (req, res, next) => {
+  console.log('🔐 Login route hit');
+  
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
