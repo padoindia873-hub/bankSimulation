@@ -6,7 +6,7 @@ import Transaction from '../models/Transaction.js';
 const router = express.Router();
 
 // Get transaction by ID
-router.get('/:transactionId', auth, async (req, res) => {
+router.get('/:transactionId', auth, async (req, res, next) => {
   try {
     const transaction = await Transaction.findOne({ 
       transactionId: req.params.transactionId,
@@ -19,12 +19,12 @@ router.get('/:transactionId', auth, async (req, res) => {
 
     res.json(transaction);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Get all transactions with filters
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req, res, next) => {
   try {
     const { 
       page = 1, 
@@ -70,7 +70,7 @@ router.get('/', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 

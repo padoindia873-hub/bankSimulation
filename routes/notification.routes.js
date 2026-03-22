@@ -6,7 +6,7 @@ import Notification from '../models/Notification.js';
 const router = express.Router();
 
 // Get user's notifications
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req, res, next) => {
   try {
     const { page = 1, limit = 20, type, unreadOnly } = req.query;
     
@@ -33,12 +33,12 @@ router.get('/', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Mark notification as read
-router.patch('/:notificationId/read', auth, async (req, res) => {
+router.patch('/:notificationId/read', auth, async (req, res, next) => {
   try {
     const notification = await Notification.findOne({
       notificationId: req.params.notificationId,
@@ -54,12 +54,12 @@ router.patch('/:notificationId/read', auth, async (req, res) => {
 
     res.json({ message: 'Notification marked as read', notification });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Mark all notifications as read
-router.patch('/read-all', auth, async (req, res) => {
+router.patch('/read-all', auth, async (req, res, next) => {
   try {
     await Notification.updateMany(
       { userId: req.userId, isRead: false },
@@ -68,12 +68,12 @@ router.patch('/read-all', auth, async (req, res) => {
 
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Delete notification
-router.delete('/:notificationId', auth, async (req, res) => {
+router.delete('/:notificationId', auth, async (req, res, next) => {
   try {
     const result = await Notification.findOneAndDelete({
       notificationId: req.params.notificationId,
@@ -86,7 +86,7 @@ router.delete('/:notificationId', auth, async (req, res) => {
 
     res.json({ message: 'Notification deleted successfully' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 

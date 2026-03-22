@@ -12,7 +12,7 @@ import { generateTransactionId, generateReferenceNumber } from '../utils/helpers
 const router = express.Router();
 
 // Domestic Transfer
-router.post('/domestic', auth, async (req, res) => {
+router.post('/domestic', auth, async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -106,14 +106,14 @@ router.post('/domestic', auth, async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   } finally {
     session.endSession();
   }
 });
 
 // International Transfer
-router.post('/international', auth, async (req, res) => {
+router.post('/international', auth, async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -217,14 +217,14 @@ router.post('/international', auth, async (req, res) => {
     });
   } catch (error) {
     await session.abortTransaction();
-    res.status(400).json({ success: false, message: error.message });
+    next(error);
   } finally {
     session.endSession();
   }
 });
 
 // Get international transfer history
-router.get('/international/history', auth, async (req, res) => {
+router.get('/international/history', auth, async (req, res, next) => {
   try {
     const { page = 1, limit = 20, status } = req.query;
     
@@ -248,12 +248,12 @@ router.get('/international/history', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Get international transfer by ID
-router.get('/international/:transferId', auth, async (req, res) => {
+router.get('/international/:transferId', auth, async (req, res, next) => {
   try {
     const transfer = await InternationalTransfer.findOne({
       transferId: req.params.transferId,
@@ -266,7 +266,7 @@ router.get('/international/:transferId', auth, async (req, res) => {
 
     res.json(transfer);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 

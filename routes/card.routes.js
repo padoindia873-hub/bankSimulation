@@ -6,19 +6,19 @@ import BankCard from '../models/BankCard.js';
 const router = express.Router();
 
 // Get user's cards
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req, res, next) => {
   try {
     const cards = await BankCard.find({ userId: req.userId, isActive: true })
       .populate('accountId', 'accountNumber bankName');
     
     res.json(cards);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Get card by ID
-router.get('/:cardId', auth, async (req, res) => {
+router.get('/:cardId', auth, async (req, res, next) => {
   try {
     const card = await BankCard.findOne({
       _id: req.params.cardId,
@@ -31,12 +31,12 @@ router.get('/:cardId', auth, async (req, res) => {
 
     res.json(card);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Block card
-router.patch('/:cardId/block', auth, async (req, res) => {
+router.patch('/:cardId/block', auth, async (req, res, next) => {
   try {
     const card = await BankCard.findOne({
       _id: req.params.cardId,
@@ -52,12 +52,12 @@ router.patch('/:cardId/block', auth, async (req, res) => {
 
     res.json({ message: 'Card blocked successfully', card });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Change card limit
-router.patch('/:cardId/limit', auth, async (req, res) => {
+router.patch('/:cardId/limit', auth, async (req, res, next) => {
   try {
     const { dailyLimit } = req.body;
     
@@ -75,7 +75,7 @@ router.patch('/:cardId/limit', auth, async (req, res) => {
 
     res.json({ message: 'Card limit updated successfully', card });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 

@@ -6,17 +6,17 @@ import ExchangeRate from '../models/ExchangeRate.js';
 const router = express.Router();
 
 // Get all exchange rates
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
   try {
     const rates = await ExchangeRate.find().sort({ fromCurrency: 1, toCurrency: 1 });
     res.json(rates);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Get specific exchange rate
-router.get('/:from/:to', async (req, res) => {
+router.get('/:from/:to', async (req, res, next) => {
   try {
     const rate = await ExchangeRate.findOne({
       fromCurrency: req.params.from.toUpperCase(),
@@ -29,12 +29,12 @@ router.get('/:from/:to', async (req, res) => {
     
     res.json(rate);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Update exchange rate (admin only)
-router.put('/:from/:to', auth, async (req, res) => {
+router.put('/:from/:to', auth, async (req, res, next) => {
   try {
     const { rate } = req.body;
     
@@ -49,7 +49,7 @@ router.put('/:from/:to', auth, async (req, res) => {
     
     res.json(updatedRate);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 

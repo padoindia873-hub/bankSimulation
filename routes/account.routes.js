@@ -7,7 +7,7 @@ import Transaction from '../models/Transaction.js';
 const router = express.Router();
 
 // Get user's bank account
-router.get('/my-account', auth, async (req, res) => {
+router.get('/my-account', auth, async (req, res, next) => {
   try {
     const account = await BankAccount.findOne({ userId: req.userId });
     
@@ -17,12 +17,12 @@ router.get('/my-account', auth, async (req, res) => {
 
     res.json(account);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Get account balance
-router.get('/balance', auth, async (req, res) => {
+router.get('/balance', auth, async (req, res, next) => {
   try {
     const account = await BankAccount.findOne({ userId: req.userId });
     
@@ -36,12 +36,12 @@ router.get('/balance', auth, async (req, res) => {
       formattedBalance: `₹ ${account.balance.toLocaleString('en-IN')}`
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Get account statement with pagination
-router.get('/statement', auth, async (req, res) => {
+router.get('/statement', auth, async (req, res, next) => {
   try {
     const { page = 1, limit = 20, from, to } = req.query;
     
@@ -75,12 +75,12 @@ router.get('/statement', auth, async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Get recent transactions
-router.get('/recent-transactions', auth, async (req, res) => {
+router.get('/recent-transactions', auth, async (req, res, next) => {
   try {
     const { limit = 10 } = req.query;
     
@@ -95,12 +95,12 @@ router.get('/recent-transactions', auth, async (req, res) => {
 
     res.json(transactions);
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 
 // Get total balance across all accounts
-router.get('/total-balance', auth, async (req, res) => {
+router.get('/total-balance', auth, async (req, res, next) => {
   try {
     const accounts = await BankAccount.find({ userId: req.userId, isActive: true });
     
@@ -117,7 +117,7 @@ router.get('/total-balance', auth, async (req, res) => {
       }))
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    next(error);
   }
 });
 

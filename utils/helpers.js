@@ -1,6 +1,5 @@
 // utils/helpers.js
 import { randomBytes } from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
 
 export const generateTransactionId = () => {
   return `TXN${Date.now()}${randomBytes(4).toString('hex').toUpperCase()}`;
