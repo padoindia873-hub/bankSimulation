@@ -8,12 +8,12 @@ import BankAccount from '../models/BankAccount.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Test route (working)
+// Test route
 router.get('/test', (req, res) => {
   res.json({ message: 'Auth router is working' });
 });
 
-// Register - FIXED VERSION
+// Register - COMPLETE WORKING VERSION
 router.post('/register', 
   body('name').notEmpty().withMessage('Name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
@@ -21,25 +21,33 @@ router.post('/register',
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   async (req, res) => {
     try {
-      console.log('📝 Register attempt:', req.body);
+      console.log('📝 Register attempt - Full version');
+      console.log('Request body:', JSON.stringify(req.body, null, 2));
       
-      // Validate input
+      // 1. Validate input
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
+        console.log('Validation errors:', errors.array());
+        return res.status(400).json({ 
+          success: false,
+          errors: errors.array() 
+        });
       }
 
       const { name, email, phone, password } = req.body;
+      console.log('Processing registration for:', { name, email, phone });
 
-      // Check if user exists
+      // 2. Check if user exists
       const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
       if (existingUser) {
+        console.log('User already exists:', existingUser.email);
         return res.status(400).json({ 
+          success: false,
           message: 'User already exists with this email or phone' 
         });
       }
 
-      // Create user
+      // 3. Create user
       const user = new User({
         userId: `USR${Date.now()}`,
         name,
@@ -49,12 +57,15 @@ router.post('/register',
       });
 
       await user.save();
-      console.log('✅ User created:', user._id);
+      console.log('✅ User created successfully. ID:', user._id);
 
-      // Create default bank account
+      // 4. Create bank account
+      const accountNumber = `ACC${Date.now()}${Math.floor(Math.random() * 1000)}`;
+      console.log('Creating account with number:', accountNumber);
+      
       const account = new BankAccount({
         userId: user._id,
-        accountNumber: `ACC${Date.now()}${Math.floor(Math.random() * 1000)}`,
+        accountNumber: accountNumber,
         accountHolderName: name.toUpperCase(),
         ifscCode: 'HDFC0001234',
         branchName: 'Main Branch',
@@ -65,13 +76,19 @@ router.post('/register',
       });
 
       await account.save();
-      console.log('✅ Account created:', account.accountNumber);
+      console.log('✅ Account created successfully. Account Number:', account.accountNumber);
 
-      // Generate token
-      const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
+      // 5. Generate JWT token
+      const token = jwt.sign(
+        { userId: user._id, email: user.email }, 
+        JWT_SECRET, 
+        { expiresIn: '7d' }
+      );
+      console.log('✅ JWT token generated');
 
-      // Send response
+      // 6. Send success response
       res.status(201).json({
+        success: true,
         message: 'User registered successfully',
         token,
         user: {
@@ -83,16 +100,31 @@ router.post('/register',
         account: {
           id: account._id,
           accountNumber: account.accountNumber,
-          balance: account.balance
+          balance: account.balance,
+          bankName: account.bankName
         }
       });
       
     } catch (error) {
-      console.error('❌ Registration error:', error);
+      console.error('❌ Registration error details:');
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
+      
+      // Check for specific MongoDB errors
+      if (error.code === 11000) {
+        return res.status(400).json({ 
+          success: false,
+          message: 'Duplicate key error. User may already exist.',
+          error: error.message
+        });
+      }
+      
       res.status(500).json({ 
+        success: false,
         message: 'Registration failed', 
-        error: error.message 
+        error: error.message,
+        errorType: error.name
       });
     }
   }
@@ -128,6 +160,7 @@ router.post('/login',
       const token = jwt.sign({ userId: user._id }, JWT_SECRET, { expiresIn: '7d' });
 
       res.json({
+        success: true,
         message: 'Login successful',
         token,
         user: {
@@ -146,6 +179,7 @@ router.post('/login',
     } catch (error) {
       console.error('❌ Login error:', error);
       res.status(500).json({ 
+        success: false,
         message: 'Login failed', 
         error: error.message 
       });
