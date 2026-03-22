@@ -41,20 +41,28 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Hash password before saving
+// FIXED: Proper error handling in pre-save hook
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
   try {
-    this.password = await bcrypt.hash(this.password, 10);
+    if (!this.isModified('password')) {
+      return next();
+    }
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
     next();
   } catch (error) {
+    console.error('Error hashing password:', error);
     next(error);
   }
 });
 
-// Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  try {
+    return await bcrypt.compare(candidatePassword, this.password);
+  } catch (error) {
+    console.error('Error comparing password:', error);
+    return false;
+  }
 };
 
 const User = mongoose.model('User', userSchema);
