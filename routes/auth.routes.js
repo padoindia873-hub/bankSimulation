@@ -1,6 +1,5 @@
-// routes/auth.routes.js - FIXED VERSION
+// routes/auth.routes.js
 import express from 'express';
-import { body, validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import BankAccount from '../models/BankAccount.js';
@@ -13,66 +12,64 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Auth router is working' });
 });
 
-// Register - FIXED: No next parameter in validation chain
+// Register - SIMPLE AND CLEAN
 router.post('/register', async (req, res) => {
   try {
     console.log('📝 Register attempt');
     
-    // MANUAL VALIDATION (instead of using express-validator middleware)
+    // Get data from body
     const { name, email, phone, password } = req.body;
-    const errors = [];
     
-    if (!name || name.trim() === '') {
-      errors.push({ msg: 'Name is required' });
-    }
-    if (!email || !email.includes('@')) {
-      errors.push({ msg: 'Valid email is required' });
-    }
-    if (!phone || phone.trim() === '') {
-      errors.push({ msg: 'Phone number is required' });
-    }
-    if (!password || password.length < 6) {
-      errors.push({ msg: 'Password must be at least 6 characters' });
-    }
-    
-    if (errors.length > 0) {
-      console.log('Validation errors:', errors);
-      return res.status(400).json({ 
+    // Validate input
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({
         success: false,
-        errors: errors 
+        message: 'All fields are required: name, email, phone, password'
       });
     }
-
-    console.log('Processing registration for:', { name, email, phone });
-
+    
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+    
+    if (!email.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid email is required'
+      });
+    }
+    
     // Check if user exists
-    const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
+    const existingUser = await User.findOne({ 
+      $or: [{ email: email.toLowerCase() }, { phone }] 
+    });
+    
     if (existingUser) {
-      console.log('User already exists:', existingUser.email);
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'User already exists with this email or phone' 
+        message: 'User already exists with this email or phone'
       });
     }
-
+    
     // Create user
     const user = new User({
       userId: `USR${Date.now()}`,
-      name,
-      email,
-      phone,
-      password
+      name: name.trim(),
+      email: email.toLowerCase().trim(),
+      phone: phone.trim(),
+      password: password // Will be hashed by pre-save hook
     });
-
-    await user.save();
-    console.log('✅ User created successfully. ID:', user._id);
-
-    // Create bank account
-    const accountNumber = `ACC${Date.now()}${Math.floor(Math.random() * 1000)}`;
     
+    await user.save();
+    console.log('✅ User created:', user._id);
+    
+    // Create bank account
     const account = new BankAccount({
       userId: user._id,
-      accountNumber: accountNumber,
+      accountNumber: `ACC${Date.now()}${Math.floor(Math.random() * 1000)}`,
       accountHolderName: name.toUpperCase(),
       ifscCode: 'HDFC0001234',
       branchName: 'Main Branch',
@@ -81,17 +78,17 @@ router.post('/register', async (req, res) => {
       accountType: 'SAVINGS',
       isActive: true
     });
-
+    
     await account.save();
-    console.log('✅ Account created successfully');
-
+    console.log('✅ Account created');
+    
     // Generate token
     const token = jwt.sign(
-      { userId: user._id, email: user.email }, 
-      JWT_SECRET, 
+      { userId: user._id, email: user.email },
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
-
+    
     // Send response
     res.status(201).json({
       success: true,
@@ -112,68 +109,62 @@ router.post('/register', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Registration error details:');
-    console.error('Error name:', error.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
+    console.error('Registration error:', error);
     
     // Handle duplicate key error
     if (error.code === 11000) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'Duplicate entry. User may already exist.',
-        error: error.message
+        message: 'Email or phone number already exists'
       });
     }
     
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      message: 'Registration failed', 
-      error: error.message,
-      errorType: error.name
+      message: 'Registration failed',
+      error: error.message
     });
   }
 });
 
-// Login route - Also fix this one
+// Login
 router.post('/login', async (req, res) => {
   try {
-    console.log('🔐 Login attempt:', req.body.email);
+    console.log('🔐 Login attempt');
     
     const { email, password } = req.body;
     
-    // Manual validation
     if (!email || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'Email and password are required' 
+        message: 'Email and password are required'
       });
     }
-
-    const user = await User.findOne({ email });
+    
+    const user = await User.findOne({ email: email.toLowerCase() });
     if (!user) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Invalid credentials' 
+        message: 'Invalid credentials'
       });
     }
-
+    
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         success: false,
-        message: 'Invalid credentials' 
+        message: 'Invalid credentials'
       });
     }
-
+    
     const account = await BankAccount.findOne({ userId: user._id });
-
+    
     const token = jwt.sign(
-      { userId: user._id }, 
-      JWT_SECRET, 
+      { userId: user._id },
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
-
+    
     res.json({
       success: true,
       message: 'Login successful',
@@ -192,11 +183,11 @@ router.post('/login', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Login error:', error);
-    res.status(500).json({ 
+    console.error('Login error:', error);
+    res.status(500).json({
       success: false,
-      message: 'Login failed', 
-      error: error.message 
+      message: 'Login failed',
+      error: error.message
     });
   }
 });
