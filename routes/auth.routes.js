@@ -1,6 +1,7 @@
 // routes/auth.routes.js
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import BankAccount from '../models/BankAccount.js';
 
@@ -12,12 +13,20 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Auth router is working' });
 });
 
-// Register - SIMPLE AND CLEAN
+// Register
 router.post('/register', async (req, res) => {
   try {
     console.log('📝 Register attempt');
     
-    // Get data from body
+    // Check if MongoDB is connected
+    if (mongoose.connection.readyState !== 1) {
+      console.error('MongoDB not connected. State:', mongoose.connection.readyState);
+      return res.status(503).json({
+        success: false,
+        message: 'Database connection not ready. Please try again.'
+      });
+    }
+    
     const { name, email, phone, password } = req.body;
     
     // Validate input
@@ -60,7 +69,7 @@ router.post('/register', async (req, res) => {
       name: name.trim(),
       email: email.toLowerCase().trim(),
       phone: phone.trim(),
-      password: password // Will be hashed by pre-save hook
+      password: password
     });
     
     await user.save();
@@ -89,7 +98,6 @@ router.post('/register', async (req, res) => {
       { expiresIn: '7d' }
     );
     
-    // Send response
     res.status(201).json({
       success: true,
       message: 'User registered successfully',
@@ -111,7 +119,6 @@ router.post('/register', async (req, res) => {
   } catch (error) {
     console.error('Registration error:', error);
     
-    // Handle duplicate key error
     if (error.code === 11000) {
       return res.status(400).json({
         success: false,
@@ -130,8 +137,6 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    console.log('🔐 Login attempt');
-    
     const { email, password } = req.body;
     
     if (!email || !password) {
