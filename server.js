@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// MongoDB Connection with better error handling
+// MongoDB Connection (keep your existing connection code)
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
@@ -22,10 +22,9 @@ if (!MONGODB_URI) {
 }
 
 console.log('📡 Attempting to connect to MongoDB...');
-console.log('Connection string:', MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')); // Hide password
 
 mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 30000, // Increase timeout to 30 seconds
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
   connectTimeoutMS: 30000,
 })
@@ -36,14 +35,9 @@ mongoose.connect(MONGODB_URI, {
 })
 .catch(err => {
   console.error('❌ MongoDB connection error:', err.message);
-  console.error('Please check:');
-  console.error('1. Your MongoDB Atlas username and password');
-  console.error('2. Network access IP whitelist in MongoDB Atlas');
-  console.error('3. Database user permissions');
   process.exit(1);
 });
 
-// Handle connection events
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err);
 });
@@ -52,22 +46,31 @@ mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
 });
 
-mongoose.connection.on('reconnected', () => {
-  console.log('MongoDB reconnected');
-});
-
-// Graceful shutdown
 process.on('SIGINT', async () => {
   await mongoose.connection.close();
   console.log('MongoDB connection closed through app termination');
   process.exit(0);
 });
 
-// Import routes
+// Import all routes
 import authRoutes from './routes/auth.routes.js';
+import accountRoutes from './routes/account.routes.js';
+import transferRoutes from './routes/transfer.routes.js';
+import beneficiaryRoutes from './routes/beneficiary.routes.js';
+import cardRoutes from './routes/card.routes.js';
+import transactionRoutes from './routes/transaction.routes.js';
+import exchangeRateRoutes from './routes/exchangeRate.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
 
-// Routes
+// Mount all routes
 app.use('/api/auth', authRoutes);
+app.use('/api/account', accountRoutes);
+app.use('/api/transfer', transferRoutes);
+app.use('/api/beneficiary', beneficiaryRoutes);
+app.use('/api/card', cardRoutes);
+app.use('/api/transaction', transactionRoutes);
+app.use('/api/exchange-rate', exchangeRateRoutes);
+app.use('/api/notification', notificationRoutes);
 
 // Health check
 app.get('/api/health', async (req, res) => {
@@ -87,6 +90,25 @@ app.get('/api/health', async (req, res) => {
   });
 });
 
+// Root route to show available endpoints
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Bank Simulation API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      account: '/api/account',
+      transfer: '/api/transfer',
+      beneficiary: '/api/beneficiary',
+      card: '/api/card',
+      transaction: '/api/transaction',
+      exchangeRate: '/api/exchange-rate',
+      notification: '/api/notification',
+      health: '/api/health'
+    }
+  });
+});
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error('Error:', err);
@@ -99,6 +121,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🌐 Environment: process.env.NODE_ENV || 'development'`);
   console.log(`📝 Health check: http://localhost:${PORT}/api/health`);
 });
