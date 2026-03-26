@@ -8,46 +8,125 @@ import BankAccount from '../models/BankAccount.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-// Bank configuration
-const BANKS = [
-  { name: 'HDFC Bank', ifscPrefix: 'HDFC', branchPrefix: 'HDFC Branch' },
-  { name: 'ICICI Bank', ifscPrefix: 'ICIC', branchPrefix: 'ICICI Branch' },
-  { name: 'State Bank of India', ifscPrefix: 'SBIN', branchPrefix: 'SBI Branch' },
-  { name: 'Axis Bank', ifscPrefix: 'UTIB', branchPrefix: 'Axis Branch' },
-  { name: 'Kotak Mahindra Bank', ifscPrefix: 'KKBK', branchPrefix: 'Kotak Branch' },
-  { name: 'Yes Bank', ifscPrefix: 'YESB', branchPrefix: 'Yes Branch' },
-  { name: 'Punjab National Bank', ifscPrefix: 'PUNB', branchPrefix: 'PNB Branch' },
-  { name: 'Bank of Baroda', ifscPrefix: 'BARB', branchPrefix: 'BOB Branch' },
-  { name: 'Canara Bank', ifscPrefix: 'CNRB', branchPrefix: 'Canara Branch' },
-  { name: 'Union Bank of India', ifscPrefix: 'UBIN', branchPrefix: 'Union Branch' }
+// Bangladesh Banks
+const BANGLADESH_BANKS = [
+  { name: 'Sonali Bank Limited', ifscPrefix: 'SB', country: 'Bangladesh' },
+  { name: 'Janata Bank Limited', ifscPrefix: 'JB', country: 'Bangladesh' },
+  { name: 'Agrani Bank Limited', ifscPrefix: 'AB', country: 'Bangladesh' },
+  { name: 'Rupali Bank Limited', ifscPrefix: 'RB', country: 'Bangladesh' },
+  { name: 'Dutch-Bangla Bank Limited', ifscPrefix: 'DBBL', country: 'Bangladesh' },
+  { name: 'BRAC Bank Limited', ifscPrefix: 'BBL', country: 'Bangladesh' },
+  { name: 'Eastern Bank Limited', ifscPrefix: 'EBL', country: 'Bangladesh' },
+  { name: 'The City Bank Limited', ifscPrefix: 'CBL', country: 'Bangladesh' },
+  { name: 'Islami Bank Bangladesh Limited', ifscPrefix: 'IBBL', country: 'Bangladesh' },
+  { name: 'Mutual Trust Bank Limited', ifscPrefix: 'MTB', country: 'Bangladesh' },
+  { name: 'Mercantile Bank Limited', ifscPrefix: 'MBL', country: 'Bangladesh' },
+  { name: 'Premier Bank Limited', ifscPrefix: 'PBL', country: 'Bangladesh' },
+  { name: 'Prime Bank Limited', ifscPrefix: 'PRIME', country: 'Bangladesh' },
+  { name: 'Southeast Bank Limited', ifscPrefix: 'SEBL', country: 'Bangladesh' },
+  { name: 'Dhaka Bank Limited', ifscPrefix: 'DBL', country: 'Bangladesh' },
+  { name: 'Al-Arafah Islami Bank Limited', ifscPrefix: 'AIBL', country: 'Bangladesh' },
+  { name: 'Social Islami Bank Limited', ifscPrefix: 'SIBL', country: 'Bangladesh' },
+  { name: 'Trust Bank Limited', ifscPrefix: 'TBL', country: 'Bangladesh' },
+  { name: 'Standard Bank Limited', ifscPrefix: 'SBL', country: 'Bangladesh' },
+  { name: 'One Bank Limited', ifscPrefix: 'OBL', country: 'Bangladesh' },
+  { name: 'Uttara Bank Limited', ifscPrefix: 'UBL', country: 'Bangladesh' },
+  { name: 'Pubali Bank Limited', ifscPrefix: 'PUBALI', country: 'Bangladesh' },
+  { name: 'National Bank Limited', ifscPrefix: 'NBL', country: 'Bangladesh' },
+  { name: 'AB Bank Limited', ifscPrefix: 'ABBL', country: 'Bangladesh' },
+  { name: 'Bank Asia Limited', ifscPrefix: 'BAL', country: 'Bangladesh' },
+  { name: 'IFIC Bank Limited', ifscPrefix: 'IFIC', country: 'Bangladesh' },
+  { name: 'NRB Bank Limited', ifscPrefix: 'NRBB', country: 'Bangladesh' },
+  { name: 'Modhumoti Bank Limited', ifscPrefix: 'MBL', country: 'Bangladesh' },
+  { name: 'Midland Bank Limited', ifscPrefix: 'MID', country: 'Bangladesh' }
 ];
 
-const BRANCHES = [
-  'Main Branch', 'Downtown Branch', 'City Center', 'West End', 'East Side',
-  'North Plaza', 'South Square', 'Corporate Office', 'Business District',
-  'Residential Area', 'Tech Park', 'Shopping Mall', 'Airport Road',
-  'Railway Station', 'University Area', 'Hospital Road', 'Market Complex'
+// Saudi Arabia Banks
+const SAUDI_ARABIA_BANKS = [
+  { name: 'National Commercial Bank (AlAhli)', ifscPrefix: 'NCB', country: 'Saudi Arabia' },
+  { name: 'Al Rajhi Bank', ifscPrefix: 'ARB', country: 'Saudi Arabia' },
+  { name: 'Riyad Bank', ifscPrefix: 'RIB', country: 'Saudi Arabia' },
+  { name: 'Samba Financial Group', ifscPrefix: 'SAMBA', country: 'Saudi Arabia' },
+  { name: 'Banque Saudi Fransi', ifscPrefix: 'BSF', country: 'Saudi Arabia' },
+  { name: 'Arab National Bank', ifscPrefix: 'ANB', country: 'Saudi Arabia' },
+  { name: 'Saudi British Bank (SABB)', ifscPrefix: 'SABB', country: 'Saudi Arabia' },
+  { name: 'Alinma Bank', ifscPrefix: 'ALINMA', country: 'Saudi Arabia' },
+  { name: 'Bank AlJazira', ifscPrefix: 'BJAZ', country: 'Saudi Arabia' },
+  { name: 'Al Bilad Bank', ifscPrefix: 'BILAD', country: 'Saudi Arabia' },
+  { name: 'Saudi Investment Bank', ifscPrefix: 'SAIB', country: 'Saudi Arabia' },
+  { name: 'Gulf International Bank', ifscPrefix: 'GIB', country: 'Saudi Arabia' },
+  { name: 'Emirates NBD Saudi Arabia', ifscPrefix: 'ENBD', country: 'Saudi Arabia' },
+  { name: 'Qatar National Bank', ifscPrefix: 'QNB', country: 'Saudi Arabia' },
+  { name: 'Muscat Bank', ifscPrefix: 'MB', country: 'Saudi Arabia' },
+  { name: 'Bank of Bahrain and Kuwait', ifscPrefix: 'BBK', country: 'Saudi Arabia' },
+  { name: 'Jordan Kuwait Bank', ifscPrefix: 'JKB', country: 'Saudi Arabia' },
+  { name: 'National Bank of Kuwait', ifscPrefix: 'NBK', country: 'Saudi Arabia' },
+  { name: 'Abu Dhabi Islamic Bank', ifscPrefix: 'ADIB', country: 'Saudi Arabia' },
+  { name: 'Dubai Islamic Bank', ifscPrefix: 'DIB', country: 'Saudi Arabia' }
 ];
 
-// Generate random bank details
+// Combine all banks
+const ALL_BANKS = [...BANGLADESH_BANKS, ...SAUDI_ARABIA_BANKS];
+
+// Branch locations
+const BANGLADESH_BRANCHES = [
+  'Dhaka Main Branch', 'Chittagong Branch', 'Rajshahi Branch', 'Khulna Branch',
+  'Sylhet Branch', 'Barisal Branch', 'Rangpur Branch', 'Mymensingh Branch',
+  'Comilla Branch', 'Narayanganj Branch', 'Gazipur Branch', 'Jessore Branch',
+  'Bogra Branch', 'Dinajpur Branch', 'Pabna Branch', 'Noakhali Branch',
+  'Feni Branch', 'Cox\'s Bazar Branch', 'Motijheel Branch', 'Gulshan Branch',
+  'Banani Branch', 'Uttara Branch', 'Dhanmondi Branch', 'Mohakhali Branch'
+];
+
+const SAUDI_BRANCHES = [
+  'Riyadh Main Branch', 'Jeddah Branch', 'Dammam Branch', 'Mecca Branch',
+  'Medina Branch', 'Khobar Branch', 'Tabuk Branch', 'Buraydah Branch',
+  'Hofuf Branch', 'Khamis Mushait Branch', 'Yanbu Branch', 'Abha Branch',
+  'Najran Branch', 'Hail Branch', 'Jubail Branch', 'Al Khobar Branch',
+  'King Abdullah District', 'Olaya Branch', 'Tahlia Street Branch',
+  'Prince Sultan Street Branch', 'King Fahd Road Branch'
+];
+
+// Generate random bank details with country-specific selection
 function getRandomBankDetails() {
-  const randomBank = BANKS[Math.floor(Math.random() * BANKS.length)];
-  const randomBranch = BRANCHES[Math.floor(Math.random() * BRANCHES.length)];
+  // Randomly select a bank from all banks
+  const randomBank = ALL_BANKS[Math.floor(Math.random() * ALL_BANKS.length)];
+  
+  // Select branches based on country
+  let randomBranch;
+  if (randomBank.country === 'Bangladesh') {
+    randomBranch = BANGLADESH_BRANCHES[Math.floor(Math.random() * BANGLADESH_BRANCHES.length)];
+  } else {
+    randomBranch = SAUDI_BRANCHES[Math.floor(Math.random() * SAUDI_BRANCHES.length)];
+  }
+  
+  // Generate random IFSC/SWIFT code
   const randomCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  const countryCode = randomBank.country === 'Bangladesh' ? 'BD' : 'SA';
   
   return {
     bankName: randomBank.name,
-    ifscCode: `${randomBank.ifscPrefix}${randomCode}`,
-    branchName: randomBranch
+    ifscCode: `${randomBank.ifscPrefix}${randomCode}${countryCode}`,
+    branchName: randomBranch,
+    country: randomBank.country
   };
 }
 
-// Generate random account number
-function generateAccountNumber() {
-  const prefix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
-  const middle = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
-  const suffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `${prefix}${middle}${suffix}`;
+// Generate random account number (different formats for different countries)
+function generateAccountNumber(country) {
+  if (country === 'Bangladesh') {
+    // Bangladesh account number format: 12-15 digits
+    const prefix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+    const middle = Math.floor(Math.random() * 1000000000).toString().padStart(10, '0');
+    const suffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+    return `${prefix}${middle}${suffix}`.slice(0, 15);
+  } else {
+    // Saudi Arabia account number format: IBAN style (14-16 digits)
+    const prefix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    const middle = Math.floor(Math.random() * 10000000000).toString().padStart(11, '0');
+    const suffix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+    return `${prefix}${middle}${suffix}`.slice(0, 16);
+  }
 }
 
 // Test route
@@ -119,7 +198,7 @@ router.post('/register', async (req, res) => {
     
     // Generate random bank details
     const bankDetails = getRandomBankDetails();
-    const accountNumber = generateAccountNumber();
+    const accountNumber = generateAccountNumber(bankDetails.country);
     
     // Create bank account with random bank
     const account = new BankAccount({
@@ -131,13 +210,15 @@ router.post('/register', async (req, res) => {
       bankName: bankDetails.bankName,
       balance: 107865564800.75,
       accountType: 'SAVINGS',
-      isActive: true
+      isActive: true,
+      country: bankDetails.country
     });
     
     await account.save();
     console.log('✅ Account created with bank:', bankDetails.bankName);
+    console.log('✅ Country:', bankDetails.country);
     console.log('✅ Account number:', accountNumber);
-    console.log('✅ IFSC Code:', bankDetails.ifscCode);
+    console.log('✅ IFSC/SWIFT Code:', bankDetails.ifscCode);
     
     // Generate token
     const token = jwt.sign(
@@ -163,7 +244,8 @@ router.post('/register', async (req, res) => {
         bankName: account.bankName,
         ifscCode: account.ifscCode,
         branchName: account.branchName,
-        accountType: account.accountType
+        accountType: account.accountType,
+        country: account.country || bankDetails.country
       }
     });
     
@@ -238,7 +320,8 @@ router.post('/login', async (req, res) => {
         bankName: account.bankName,
         ifscCode: account.ifscCode,
         branchName: account.branchName,
-        accountType: account.accountType
+        accountType: account.accountType,
+        country: account.country
       } : null
     });
     
@@ -252,16 +335,50 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Optional: Endpoint to get available banks
-router.get('/banks', (req, res) => {
-  const availableBanks = BANKS.map(bank => ({
+// Endpoint to get available banks by country
+router.get('/banks/:country?', (req, res) => {
+  const { country } = req.params;
+  
+  let banks = ALL_BANKS;
+  
+  if (country) {
+    if (country.toLowerCase() === 'bangladesh') {
+      banks = BANGLADESH_BANKS;
+    } else if (country.toLowerCase() === 'saudiarabia' || country.toLowerCase() === 'saudi') {
+      banks = SAUDI_ARABIA_BANKS;
+    }
+  }
+  
+  const availableBanks = banks.map(bank => ({
     name: bank.name,
-    ifscPrefix: bank.ifscPrefix
+    ifscPrefix: bank.ifscPrefix,
+    country: bank.country
   }));
   
   res.json({
     success: true,
-    banks: availableBanks
+    count: availableBanks.length,
+    banks: availableBanks,
+    countries: {
+      bangladesh: BANGLADESH_BANKS.length,
+      saudiArabia: SAUDI_ARABIA_BANKS.length,
+      total: ALL_BANKS.length
+    }
+  });
+});
+
+// Endpoint to get bank statistics
+router.get('/banks-stats', (req, res) => {
+  res.json({
+    success: true,
+    statistics: {
+      totalBanks: ALL_BANKS.length,
+      bangladeshBanks: BANGLADESH_BANKS.length,
+      saudiArabiaBanks: SAUDI_ARABIA_BANKS.length,
+      bangladeshBranches: BANGLADESH_BRANCHES.length,
+      saudiArabiaBranches: SAUDI_BRANCHES.length,
+      lastUpdated: new Date().toISOString()
+    }
   });
 });
 
