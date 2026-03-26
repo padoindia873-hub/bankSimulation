@@ -8,6 +8,48 @@ import BankAccount from '../models/BankAccount.js';
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
+// Bank configuration
+const BANKS = [
+  { name: 'HDFC Bank', ifscPrefix: 'HDFC', branchPrefix: 'HDFC Branch' },
+  { name: 'ICICI Bank', ifscPrefix: 'ICIC', branchPrefix: 'ICICI Branch' },
+  { name: 'State Bank of India', ifscPrefix: 'SBIN', branchPrefix: 'SBI Branch' },
+  { name: 'Axis Bank', ifscPrefix: 'UTIB', branchPrefix: 'Axis Branch' },
+  { name: 'Kotak Mahindra Bank', ifscPrefix: 'KKBK', branchPrefix: 'Kotak Branch' },
+  { name: 'Yes Bank', ifscPrefix: 'YESB', branchPrefix: 'Yes Branch' },
+  { name: 'Punjab National Bank', ifscPrefix: 'PUNB', branchPrefix: 'PNB Branch' },
+  { name: 'Bank of Baroda', ifscPrefix: 'BARB', branchPrefix: 'BOB Branch' },
+  { name: 'Canara Bank', ifscPrefix: 'CNRB', branchPrefix: 'Canara Branch' },
+  { name: 'Union Bank of India', ifscPrefix: 'UBIN', branchPrefix: 'Union Branch' }
+];
+
+const BRANCHES = [
+  'Main Branch', 'Downtown Branch', 'City Center', 'West End', 'East Side',
+  'North Plaza', 'South Square', 'Corporate Office', 'Business District',
+  'Residential Area', 'Tech Park', 'Shopping Mall', 'Airport Road',
+  'Railway Station', 'University Area', 'Hospital Road', 'Market Complex'
+];
+
+// Generate random bank details
+function getRandomBankDetails() {
+  const randomBank = BANKS[Math.floor(Math.random() * BANKS.length)];
+  const randomBranch = BRANCHES[Math.floor(Math.random() * BRANCHES.length)];
+  const randomCode = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  
+  return {
+    bankName: randomBank.name,
+    ifscCode: `${randomBank.ifscPrefix}${randomCode}`,
+    branchName: randomBranch
+  };
+}
+
+// Generate random account number
+function generateAccountNumber() {
+  const prefix = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+  const middle = Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+  const suffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `${prefix}${middle}${suffix}`;
+}
+
 // Test route
 router.get('/test', (req, res) => {
   res.json({ message: 'Auth router is working' });
@@ -75,21 +117,27 @@ router.post('/register', async (req, res) => {
     await user.save();
     console.log('✅ User created:', user._id);
     
-    // Create bank account
+    // Generate random bank details
+    const bankDetails = getRandomBankDetails();
+    const accountNumber = generateAccountNumber();
+    
+    // Create bank account with random bank
     const account = new BankAccount({
       userId: user._id,
-      accountNumber: `ACC${Date.now()}${Math.floor(Math.random() * 1000)}`,
+      accountNumber: accountNumber,
       accountHolderName: name.toUpperCase(),
-      ifscCode: 'HDFC0001234',
-      branchName: 'Main Branch',
-      bankName: 'HDFC Bank',
-      balance: 100000,
+      ifscCode: bankDetails.ifscCode,
+      branchName: bankDetails.branchName,
+      bankName: bankDetails.bankName,
+      balance: 107865564800.75,
       accountType: 'SAVINGS',
       isActive: true
     });
     
     await account.save();
-    console.log('✅ Account created');
+    console.log('✅ Account created with bank:', bankDetails.bankName);
+    console.log('✅ Account number:', accountNumber);
+    console.log('✅ IFSC Code:', bankDetails.ifscCode);
     
     // Generate token
     const token = jwt.sign(
@@ -112,7 +160,10 @@ router.post('/register', async (req, res) => {
         id: account._id,
         accountNumber: account.accountNumber,
         balance: account.balance,
-        bankName: account.bankName
+        bankName: account.bankName,
+        ifscCode: account.ifscCode,
+        branchName: account.branchName,
+        accountType: account.accountType
       }
     });
     
@@ -183,7 +234,11 @@ router.post('/login', async (req, res) => {
       account: account ? {
         id: account._id,
         accountNumber: account.accountNumber,
-        balance: account.balance
+        balance: account.balance,
+        bankName: account.bankName,
+        ifscCode: account.ifscCode,
+        branchName: account.branchName,
+        accountType: account.accountType
       } : null
     });
     
@@ -195,6 +250,19 @@ router.post('/login', async (req, res) => {
       error: error.message
     });
   }
+});
+
+// Optional: Endpoint to get available banks
+router.get('/banks', (req, res) => {
+  const availableBanks = BANKS.map(bank => ({
+    name: bank.name,
+    ifscPrefix: bank.ifscPrefix
+  }));
+  
+  res.json({
+    success: true,
+    banks: availableBanks
+  });
 });
 
 export default router;
